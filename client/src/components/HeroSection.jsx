@@ -11,7 +11,7 @@ export default function HeroSection() {
             Professional mobile repair services delivered to your home. Fast, reliable, and convenient — your phone fixed while you relax!
           </p>
           <div className="row" style={{ gap: 12 }}>
-            <Link className="btn btn-primary" to="/bookings">Book Now</Link>
+            <Link className="btn btn-primary" to="/bookings">My Bookings</Link>
             <a className="btn btn-ghost" href="#how-it-works">How It Works</a>
           </div>
           <div className="grid" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginTop: 12 }}>

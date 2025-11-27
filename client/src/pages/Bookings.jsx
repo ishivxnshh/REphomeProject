@@ -109,9 +109,6 @@ export default function Bookings() {
     <div className="container page stack">
       <div className="space-between">
         <h2 style={{ margin: 0 }}>My Bookings</h2>
-        <div className="row">
-          <button className="btn btn-primary" onClick={openCreate}>Create booking</button>
-        </div>
       </div>
       <div className="card">
         {bookings.length === 0 ? (

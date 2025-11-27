@@ -43,7 +43,6 @@ export default function Dashboard() {
             </div>
             <div className="row" style={{ justifyContent: 'flex-end', gap: 8 }}>
               <a className="btn btn-primary" href="tel:+916353768151">Call Now</a>
-              <a className="btn btn-ghost" href="mailto:support@rephome.com?subject=Repair%20Inquiry&body=Hi%20Rephome,%0A%0AI%20need%20help%20with%20my%20device.%20Please%20contact%20me%20back.%0A%0AThanks,">Email</a>
             </div>
           </div>
         </div>

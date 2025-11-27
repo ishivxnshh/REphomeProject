@@ -7,11 +7,15 @@ const {
     updateMyBooking,
     cancelMyBooking,
     adminList,
-    adminUpdateStatus
+    adminUpdateStatus,
+    verifyOTP,
+    resendOTP
 } = require('../controllers/booking.controller');
 
 // User routes
 router.post('/', auth, createBooking);
+router.post('/verify-otp', auth, verifyOTP);
+router.post('/resend-otp', auth, resendOTP);
 router.get('/', auth, getMyBookings);
 router.get('/:id', auth, getOne);
 router.put('/:id', auth, updateMyBooking);

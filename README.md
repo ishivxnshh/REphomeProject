@@ -27,7 +27,18 @@ PORT=5000
 MONGODB_URI=mongodb://127.0.0.1:27017/rephome
 JWT_SECRET=replace_with_long_random_string
 CLIENT_URL=http://localhost:5173
+
+# Email Configuration (for OTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
 ```
+
+**Email Setup Notes:**
+- For Gmail: Use an App Password (not your regular password). Enable 2FA and generate an app password at https://myaccount.google.com/apppasswords
+- For other providers: Update SMTP_HOST and SMTP_PORT accordingly
+- For development/testing: You can use services like Mailtrap or Ethereal Email
 2. Install dependencies in each app folder:
 ```
 cd server && npm install
@@ -59,8 +70,13 @@ Auth
 
 Bookings (requires Bearer token)
 - GET `/bookings` — list current user bookings
-- POST `/bookings` — create booking
+- POST `/bookings` — create booking (sends OTP to email)
   - body: `{ name, phone, email, address, deviceModel, issue, description?, preferredDate, preferredTime }`
+  - returns: booking with `otpSent` status
+- POST `/bookings/verify-otp` — verify OTP to confirm booking
+  - body: `{ bookingId, otp }`
+- POST `/bookings/resend-otp` — resend OTP email
+  - body: `{ bookingId }`
 - GET `/bookings/:id` — get own booking
 - PUT `/bookings/:id` — update own booking
 - DELETE `/bookings/:id` — cancel own booking (sets `status=cancelled`)

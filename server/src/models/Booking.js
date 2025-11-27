@@ -15,7 +15,10 @@ const bookingSchema = new mongoose.Schema(
         preferredDate: { type: Date, required: true },
         preferredTime: { type: String, required: true },
         status: { type: String, enum: ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'], default: 'pending' },
-        bookingId: { type: String, unique: true, index: true }
+        bookingId: { type: String, unique: true, index: true },
+        otp: { type: String },
+        otpExpiresAt: { type: Date },
+        emailVerified: { type: Boolean, default: false }
     },
     { timestamps: true }
 );

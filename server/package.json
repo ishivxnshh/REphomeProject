@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "lint": "echo no-lint"
+    "lint": "echo no-lint",
+    "seed:shops": "node src/scripts/seedShops.js"
   },
   "author": "",
   "license": "ISC",

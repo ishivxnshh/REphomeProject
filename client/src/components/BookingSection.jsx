@@ -9,6 +9,92 @@ export default function BookingSection() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+  const [showOTPVerification, setShowOTPVerification] = useState(false);
+  const [createdBookingId, setCreatedBookingId] = useState(null);
+  const [otp, setOtp] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [otpMessage, setOtpMessage] = useState('');
+
+  // Hardcoded nearby shops for Mathura
+  const nearbyShops = [
+    {
+      _id: '1',
+      name: 'Cashify',
+      rating: 4.8,
+      reviewCount: 482,
+      category: 'Mobile phone repair shop',
+      address: 'Vikas Market, Mathura',
+      openingHours: 'Open',
+      closingHours: '9 pm',
+      features: {
+        inStoreShopping: true,
+        inStorePickup: true,
+        delivery: true
+      },
+      description: 'Buy, Sell & Repair in Mathura'
+    },
+    {
+      _id: '2',
+      name: 'Jaswant Telecom',
+      rating: 4.4,
+      reviewCount: 839,
+      category: 'Mobile phone repair shop',
+      address: 'Surya Nagar, Mathura',
+      openingHours: 'Open',
+      closingHours: '9 pm',
+      yearsInBusiness: '15+ years in business',
+      description: 'Mobile Repair Hub - Best iPhone mobile repair and best shop in mathura',
+      features: {
+        inStoreShopping: true,
+        delivery: true
+      }
+    },
+    {
+      _id: '3',
+      name: 'Manu Mobile',
+      rating: 4.5,
+      reviewCount: 120,
+      category: 'Mobile phone repair shop',
+      address: 'Rani ki Mandi, Mathura',
+      openingHours: 'Open',
+      closingHours: '9:30 pm',
+      description: 'Repairing Centre - Expert mobile repair services',
+      features: {
+        inStoreShopping: true
+      }
+    },
+    {
+      _id: '4',
+      name: 'Sharma Telecom',
+      rating: 4.8,
+      reviewCount: 156,
+      category: 'Mobile phone repair shop',
+      address: 'NH 19, near Jaigurudev, Mathura',
+      openingHours: 'Open',
+      closingHours: '9 pm',
+      yearsInBusiness: '3+ years in business',
+      description: 'Mobile Repairing & Electronics - Quality service and repairs',
+      features: {
+        inStoreShopping: true,
+        delivery: true
+      }
+    },
+    {
+      _id: '5',
+      name: 'Priya Telecom',
+      rating: 4.6,
+      reviewCount: 95,
+      category: 'Mobile phone repair shop',
+      address: 'Krishna Nagar Road, Krishna Nagar, Mathura',
+      openingHours: 'Open',
+      closingHours: '10 pm',
+      description: 'Expert mobile repair and service center',
+      features: {
+        inStoreShopping: true,
+        kerbsidePickup: true
+      }
+    }
+  ];
 
   const brandModels = {
     'Apple': ['iPhone 15 Pro', 'iPhone 15', 'iPhone 14 Pro', 'iPhone 14', 'iPhone 13 Pro', 'iPhone 13', 'iPhone 12', 'iPhone 11', 'iPhone SE', 'iPad Pro', 'iPad Air', 'iPad'],
@@ -72,13 +158,57 @@ export default function BookingSection() {
       }
       const required = ['name','phone','email','brandName','deviceModel','issue','preferredDate','preferredTime','address'];
       for (const k of required) if (!form[k]) { setMessage('Please fill all required fields.'); setSubmitting(false); return; }
-      await api('/bookings', { method: 'POST', body: JSON.stringify({ ...form, estimatedPrice: estimate }) });
-      setMessage('Scheduled successfully!');
-      setForm({ name: '', phone: '', email: '', brandName: '', deviceModel: '', issue: '', preferredDate: '', preferredTime: '', address: '', description: '' });
+      const result = await api('/bookings', { method: 'POST', body: JSON.stringify({ ...form, estimatedPrice: estimate }) });
+      setCreatedBookingId(result.bookingId);
+      setShowOTPVerification(true);
+      setMessage(result.message || 'Booking created! Please check your email for OTP.');
     } catch (e) {
       setMessage(e.message);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function verifyOTP() {
+    try {
+      setVerifying(true);
+      setOtpMessage('');
+      if (!otp || otp.length !== 6) {
+        setOtpMessage('Please enter a valid 6-digit OTP');
+        setVerifying(false);
+        return;
+      }
+      await api('/bookings/verify-otp', { 
+        method: 'POST', 
+        body: JSON.stringify({ bookingId: createdBookingId, otp }) 
+      });
+      setOtpMessage('Booking verified successfully!');
+      setShowOTPVerification(false);
+      setForm({ name: '', phone: '', email: '', brandName: '', deviceModel: '', issue: '', preferredDate: '', preferredTime: '', address: '', description: '' });
+      setOtp('');
+      setCreatedBookingId(null);
+      setTimeout(() => {
+        setMessage('');
+        setOtpMessage('');
+      }, 3000);
+    } catch (e) {
+      setOtpMessage(e.message);
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  async function resendOTP() {
+    try {
+      setOtpMessage('Resending OTP...');
+      const result = await api('/bookings/resend-otp', { 
+        method: 'POST', 
+        body: JSON.stringify({ bookingId: createdBookingId }) 
+      });
+      setOtpMessage(result.message || 'OTP resent! Please check your email.');
+      setOtp('');
+    } catch (e) {
+      setOtpMessage(e.message || 'Failed to resend OTP. Please try again.');
     }
   }
 
@@ -148,6 +278,93 @@ export default function BookingSection() {
             <textarea className="input" rows="3" value={form.description} onChange={e => updateField('description', e.target.value)} />
           </FormField>
         </div>
+        {form.address && form.address.trim().length >= 7 && (
+          <div style={{ marginTop: 24 }}>
+            <h3 style={{ marginBottom: 16, fontSize: '1.2rem', color: 'var(--text)' }}>Nearby Mobile Repair Shops</h3>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {nearbyShops.map((shop) => (
+                  <div
+                    key={shop._id}
+                    style={{
+                      padding: 16,
+                      backgroundColor: 'var(--surface)',
+                      borderRadius: 8,
+                      border: '1px solid var(--border)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--primary)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 4 }}>
+                          {shop.nameHindi ? `${shop.name} (${shop.nameHindi})` : shop.name}
+                        </div>
+                        {shop.rating > 0 && (
+                          <div style={{ fontSize: '0.85rem', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span>⭐ {shop.rating}</span>
+                            {shop.reviewCount > 0 && <span>({shop.reviewCount})</span>}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
+                        {shop.category}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text)', marginBottom: 8 }}>
+                      📍 {shop.address}
+                    </div>
+                    {shop.phone && (
+                      <div style={{ fontSize: '0.9rem', color: 'var(--text)', marginBottom: 8 }}>
+                        📞 {shop.phone}
+                      </div>
+                    )}
+                    {shop.openingHours && shop.closingHours && (
+                      <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginBottom: 8 }}>
+                        🕐 Open · Closes {shop.closingHours}
+                      </div>
+                    )}
+                    {shop.features && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                        {shop.features.inStoreShopping && (
+                          <span style={{ fontSize: '0.75rem', padding: '4px 8px', backgroundColor: 'var(--primary)', color: 'white', borderRadius: 4 }}>
+                            In-store shopping
+                          </span>
+                        )}
+                        {shop.features.kerbsidePickup && (
+                          <span style={{ fontSize: '0.75rem', padding: '4px 8px', backgroundColor: 'var(--primary)', color: 'white', borderRadius: 4 }}>
+                            Kerbside pickup
+                          </span>
+                        )}
+                        {shop.features.delivery && (
+                          <span style={{ fontSize: '0.75rem', padding: '4px 8px', backgroundColor: 'var(--primary)', color: 'white', borderRadius: 4 }}>
+                            Delivery
+                          </span>
+                        )}
+                        {shop.features.inStorePickup && (
+                          <span style={{ fontSize: '0.75rem', padding: '4px 8px', backgroundColor: 'var(--primary)', color: 'white', borderRadius: 4 }}>
+                            In-store pick-up
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {shop.description && (
+                      <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: 8, fontStyle: 'italic' }}>
+                        "{shop.description}"
+                      </div>
+                    )}
+                  </div>
+              ))}
+            </div>
+          </div>
+        )}
         {estimate && (
           <div style={{ 
             marginTop: 20, 
@@ -168,6 +385,57 @@ export default function BookingSection() {
           <button className="btn btn-primary" onClick={submit} disabled={submitting}>{submitting ? 'Scheduling…' : 'Schedule Repair'}</button>
         </div>
         {message && <p style={{ textAlign: 'center', color: 'var(--muted)', marginTop: 10 }}>{message}</p>}
+        
+        {showOTPVerification && (
+          <div style={{ 
+            marginTop: 24, 
+            padding: 20, 
+            backgroundColor: 'var(--surface)', 
+            borderRadius: 8, 
+            border: '2px solid var(--primary)' 
+          }}>
+            <h3 style={{ marginBottom: 16, fontSize: '1.2rem', color: 'var(--text)' }}>Verify Your Booking</h3>
+            <p style={{ marginBottom: 16, color: 'var(--muted)' }}>
+              We've sent a 6-digit OTP to your email. Please enter it below to confirm your booking.
+            </p>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+              <input
+                type="text"
+                className="input"
+                placeholder="Enter 6-digit OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                maxLength={6}
+                style={{ flex: 1, textAlign: 'center', fontSize: '1.2rem', letterSpacing: '4px' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button 
+                className="btn btn-primary" 
+                onClick={verifyOTP} 
+                disabled={verifying || otp.length !== 6}
+              >
+                {verifying ? 'Verifying…' : 'Verify OTP'}
+              </button>
+              <button 
+                className="btn" 
+                onClick={resendOTP}
+                style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
+              >
+                Resend OTP
+              </button>
+            </div>
+            {otpMessage && (
+              <p style={{ 
+                textAlign: 'center', 
+                marginTop: 12, 
+                color: otpMessage.includes('successfully') ? 'green' : 'var(--muted)' 
+              }}>
+                {otpMessage}
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );
