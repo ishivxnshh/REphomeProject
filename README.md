@@ -1,28 +1,36 @@
-﻿# Rephome – MERN Application
+﻿## Rephome – MERN Phone Repair Booking App
 
-A complete MERN stack application for doorstep phone repair bookings with JWT authentication, user-owned bookings, and a React client.
+A complete **MERN stack** application for doorstep phone repair bookings, with **JWT authentication**, **user-owned bookings**, OTP verification over email, and an admin view for managing requests.
 
-## Stack
-- Server: Node.js, Express, Mongoose (MongoDB)
-- Client: React 18 + Vite + React Router
-- Auth: JSON Web Tokens (JWT)
+### Overview
+- **What it does**: Lets customers book doorstep phone repairs, verify bookings via email OTP, and track booking status.
+- **Who it’s for**: End users who need quick repair bookings and admins/ops teams who manage those bookings.
+- **Architecture**: Node/Express API + MongoDB backend, React + Vite frontend, stateless JWT auth.
 
-## Repository Structure
+### Tech Stack
+- **Server**: Node.js, Express, Mongoose (MongoDB)
+- **Client**: React 18, Vite, React Router
+- **Auth**: JSON Web Tokens (JWT) with role-based access for admin
+
+### Repository Structure
 ```
 .
-├─ server/          # Express API (MongoDB, JWT auth, bookings)
-├─ client/          # React app (auth, bookings UI)
+├─ server/          # Express API (MongoDB, JWT auth, bookings, OTP email)
+├─ client/          # React app (auth, dashboards, bookings UI)
 └─ (no root package.json)
 ```
 
-## Prerequisites
-- Node.js 18+
-- npm 9+
-- MongoDB running locally at `mongodb://127.0.0.1:27017`
+## Getting Started
 
-## 1) Setup
-1. Create environment file at `server/.env`:
-```
+### 1. Prerequisites
+- **Node.js**: 18+
+- **npm**: 9+
+- **MongoDB**: running locally at `mongodb://127.0.0.1:27017` (or update the URI in `.env`)
+
+### 2. Backend Environment Variables
+Create a `.env` file in `server/`:
+
+```env
 PORT=5000
 MONGODB_URI=mongodb://127.0.0.1:27017/rephome
 JWT_SECRET=replace_with_long_random_string
@@ -35,84 +43,125 @@ SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 ```
 
-**Email Setup Notes:**
-- For Gmail: Use an App Password (not your regular password). Enable 2FA and generate an app password at https://myaccount.google.com/apppasswords
-- For other providers: Update SMTP_HOST and SMTP_PORT accordingly
-- For development/testing: You can use services like Mailtrap or Ethereal Email
-2. Install dependencies in each app folder:
-```
+**Email setup notes**
+- **Gmail**: Use an **App Password** (not your regular password). Enable 2FA and generate one at `https://myaccount.google.com/apppasswords`.
+- **Other providers**: Update `SMTP_HOST` and `SMTP_PORT` accordingly.
+- **Testing-only**: You can use services like Mailtrap or Ethereal Email to avoid sending real emails.
+
+### 3. Install Dependencies
+From the repository root:
+
+```bash
 cd server && npm install
 cd ../client && npm install
 ```
 
-## 2) Run (Dev)
+### 4. Run in Development
 Run server and client in separate terminals:
-```
-# Terminal 1
+
+```bash
+# Terminal 1 – API
 cd server
 npm run dev
 
-# Terminal 2
+# Terminal 2 – React client
 cd client
 npm run dev
 ```
-- Client: http://localhost:5173
-- API: http://localhost:5000
-- Health check: `GET /api/health` → `{ status: "ok" }`
 
-## 3) API Overview
-Base URL: `http://localhost:5000/api`
+- **Client**: `http://localhost:5173`
+- **API**: `http://localhost:5000`
+- **Health check**: `GET /api/health` → `{ "status": "ok" }`
 
-Auth
-- POST `/auth/register` — body: `{ name, email, password }`
-- POST `/auth/login` — body: `{ email, password }`
-- GET `/auth/me` — header: `Authorization: Bearer <token>`
+## API Reference
 
-Bookings (requires Bearer token)
-- GET `/bookings` — list current user bookings
-- POST `/bookings` — create booking (sends OTP to email)
-  - body: `{ name, phone, email, address, deviceModel, issue, description?, preferredDate, preferredTime }`
-  - returns: booking with `otpSent` status
-- POST `/bookings/verify-otp` — verify OTP to confirm booking
-  - body: `{ bookingId, otp }`
-- POST `/bookings/resend-otp` — resend OTP email
-  - body: `{ bookingId }`
-- GET `/bookings/:id` — get own booking
-- PUT `/bookings/:id` — update own booking
-- DELETE `/bookings/:id` — cancel own booking (sets `status=cancelled`)
+### Base URL
+- **Base**: `http://localhost:5000/api`
 
-Admin (requires role=admin)
-- GET `/bookings/admin/all`
-- PATCH `/bookings/admin/:id/status` — body: `{ status }` where status ∈ `pending|confirmed|in_progress|completed|cancelled`
+### Auth
+- **POST** `/auth/register`  
+  - **Body**: `{ name, email, password }`
+- **POST** `/auth/login`  
+  - **Body**: `{ email, password }`
+- **GET** `/auth/me`  
+  - **Headers**: `Authorization: Bearer <token>`
 
-## 4) Client Overview
-- Auth flow stored in localStorage (token + user)
-- Pages:
-  - Login (`/login`) and Register (`/register`)
-  - Dashboard (`/`) with quick links
-  - My Bookings (`/bookings`) — protected route
-- Minimal demo “Create booking” button to verify end-to-end API connectivity
+### Bookings (Authenticated)
+- **GET** `/bookings`  
+  - Lists bookings for the **current user**.
+- **POST** `/bookings`  
+  - Creates a booking and sends an OTP email.
+  - **Body**:  
+    `{ name, phone, email, address, deviceModel, issue, description?, preferredDate, preferredTime }`
+  - **Returns**: booking with `otpSent` status.
+- **POST** `/bookings/verify-otp`  
+  - Confirms booking via OTP.  
+  - **Body**: `{ bookingId, otp }`
+- **POST** `/bookings/resend-otp`  
+  - Resends OTP email.  
+  - **Body**: `{ bookingId }`
+- **GET** `/bookings/:id`  
+  - Fetch a single **own** booking.
+- **PUT** `/bookings/:id`  
+  - Update a **own** booking (e.g., reschedule, details).
+- **DELETE** `/bookings/:id`  
+  - Cancel a **own** booking (`status = "cancelled"`).
 
-## 5) Development Notes
-- CORS configured to allow `CLIENT_URL`
-- Legacy static site removed in favor of the React client
-- Backend lives in `server/`
+### Admin (role: `admin`)
+- **GET** `/bookings/admin/all`  
+  - List all bookings in the system.
+- **PATCH** `/bookings/admin/:id/status`  
+  - Update booking status.  
+  - **Body**: `{ status }` where  
+    `status ∈ "pending" | "confirmed" | "in_progress" | "completed" | "cancelled"`.
 
-## 6) Useful Commands
-- Server: `cd server && npm run dev`
-- Client: `cd client && npm run dev`
+## Client App Overview
 
-## 7) Production Considerations
-- Use strong `JWT_SECRET` and environment-specific `CLIENT_URL`
-- Serve the client via a CDN or from a production host (e.g., Vercel/Netlify)
-- Add rate limiting, request validation (e.g., zod/joi), logging (morgan/pino)
-- Configure HTTPS and secure cookies if moving to cookie-based auth
-- Set up CI/CD and environment secrets for deployments
+- **State & auth**
+  - JWT token and user info stored in `localStorage`.
+  - Protected routes check for a valid token.
+- **Pages**
+  - **Login**: `/login`
+  - **Register**: `/register`
+  - **Dashboard**: `/` (quick links and overview)
+  - **My Bookings**: `/bookings` (protected; shows user’s bookings)
+- **Demo flow**
+  - A minimal **“Create booking”** flow exists to verify end-to-end API + email OTP working.
 
-## 8) Troubleshooting
-- If MongoDB connection fails, ensure the service is running and the URI is correct
-- If CORS errors appear in the client, verify `CLIENT_URL` in `server/.env`
-- On Windows PowerShell, run scripts from the repository root
+## Development Notes
+
+- **CORS** is configured on the backend to allow `CLIENT_URL`.
+- Legacy static pages were removed in favor of the modern React client in `client/`.
+- All backend logic (auth, bookings, email, etc.) lives under `server/`.
+
+## Useful Commands
+
+- **Run server (dev)**: `cd server && npm run dev`
+- **Run client (dev)**: `cd client && npm run dev`
+
+## Production Considerations
+
+- **Security**
+  - Use a strong, unique `JWT_SECRET` per environment.
+  - Lock down `CLIENT_URL` to your real frontend origin(s).
+  - Consider rate limiting, request validation (e.g., zod/joi), and structured logging (morgan/pino).
+- **Deployment**
+  - Serve the React app via a production host (e.g., Vercel, Netlify, or behind Nginx).
+  - Host the API on a Node-friendly platform (e.g., Render, Railway, EC2, etc.).
+  - Configure HTTPS and secure cookies if you move to cookie-based auth.
+- **Ops**
+  - Configure CI/CD, environment secrets, and backups for MongoDB.
+
+## Troubleshooting
+
+- **MongoDB connection issues**
+  - Ensure MongoDB is running and `MONGODB_URI` is correct.
+- **CORS errors in the browser**
+  - Verify `CLIENT_URL` in `server/.env` and restart the API server.
+- **Windows PowerShell execution**
+  - Run commands **from the repository root** or the respective `server/` / `client/` folder.
 
 ---
-This README covers end-to-end setup, run, and usage for the MERN app. For UI/UX enhancements or migrating legacy static pages into React components, open an issue or request the next task.
+
+This README covers end-to-end **setup, run, and usage** for the Rephome MERN app.  
+For UI/UX enhancements, new features, or production hardening, feel free to extend these sections or add your own documentation.
